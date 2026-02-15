@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>University Admission Checker - Assignment Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #555;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .result-section {
+            display: none;
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        .download-btn {
+            background: #10b981;
+            margin-top: 10px;
+        }
+
+        .download-btn:hover {
+            box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .preview {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9fafb;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .preview h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .error {
+            color: #ef4444;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎓 University Admission Checker</h1>
+        <p class="subtitle">Assignment Screenshot Generator</p>
+
+        <form id="studentForm">
+            <div class="form-group">
+                <label for="studentName">Student Name:</label>
+                <input type="text" id="studentName" required placeholder="Enter your full name">
+                <div class="error" id="nameError">Please enter your name</div>
+            </div>
+
+            <div class="form-group">
+                <label for="oLevelCredits">Number of O-level Credits:</label>
+                <input type="number" id="oLevelCredits" required min="0" max="20" placeholder="e.g., 5">
+                <div class="error" id="creditsError">Please enter a valid number (0-20)</div>
+            </div>
+
+            <div class="form-group">
+                <label for="jambScore">JAMB Score:</label>
+                <input type="number" id="jambScore" required min="0" max="400" placeholder="e.g., 245">
+                <div class="error" id="jambError">Please enter a valid score (0-400)</div>
+            </div>
+
+            <div class="form-group">
+                <label for="studentAge">Student Age:</label>
+                <input type="number" id="studentAge" required min="10" max="100" placeholder="e.g., 19">
+                <div class="error" id="ageError">Please enter a valid age (10-100)</div>
+            </div>
+
+            <button type="submit" class="btn" id="generateBtn">Generate Screenshots</button>
+        </form>
+
+        <div class="loading" id="loading">
+            <p>⏳ Generating your screenshots...</p>
+        </div>
+
+        <div class="result-section" id="resultSection">
+            <h3 style="color: #333; margin-bottom: 15px;">✅ Screenshots Ready!</h3>
+            <button onclick="downloadOutput()" class="btn download-btn">📥 Download Output Screenshot</button>
+            <button onclick="downloadCode()" class="btn download-btn">📥 Download Code Screenshot</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        const form = document.getElementById('studentForm');
+        const loading = document.getElementById('loading');
+        const resultSection = document.getElementById('resultSection');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Validate inputs
+            if (!validateForm()) {
+                return;
+            }
+
+            // Get form values
+            const name = document.getElementById('studentName').value;
+            const oLevelCredits = parseInt(document.getElementById('oLevelCredits').value);
+            const jambScore = parseInt(document.getElementById('jambScore').value);
+            const age = parseInt(document.getElementById('studentAge').value);
+
+            // Show loading
+            loading.style.display = 'block';
+            document.getElementById('generateBtn').disabled = true;
+
+            // Store data for later use
+            window.studentData = { name, oLevelCredits, jambScore, age };
+
+            // Generate screenshots
+            setTimeout(() => {
+                loading.style.display = 'none';
+                resultSection.style.display = 'block';
+                document.getElementById('generateBtn').disabled = false;
+            }, 1000);
+        });
+
+        function validateForm() {
+            let isValid = true;
+            
+            const name = document.getElementById('studentName').value.trim();
+            const credits = parseInt(document.getElementById('oLevelCredits').value);
+            const jamb = parseInt(document.getElementById('jambScore').value);
+            const age = parseInt(document.getElementById('studentAge').value);
+
+            // Hide all errors first
+            document.querySelectorAll('.error').forEach(err => err.style.display = 'none');
+
+            if (!name) {
+                document.getElementById('nameError').style.display = 'block';
+                isValid = false;
+            }
+
+            if (isNaN(credits) || credits < 0 || credits > 20) {
+                document.getElementById('creditsError').style.display = 'block';
+                isValid = false;
+            }
+
+            if (isNaN(jamb) || jamb < 0 || jamb > 400) {
+                document.getElementById('jambError').style.display = 'block';
+                isValid = false;
+            }
+
+            if (isNaN(age) || age < 10 || age > 100) {
+                document.getElementById('ageError').style.display = 'block';
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        async function downloadOutput() {
+            const data = window.studentData;
+            const eligibility = (data.oLevelCredits >= 5 && data.jambScore >= 200 && data.age >= 16) 
+                ? "ELIGIBLE FOR ADMISSION" 
+                : "NOT ELIGIBLE FOR ADMISSION";
+
+            // Create output screenshot
+            const canvas = document.createElement('canvas');
+            canvas.width = 1366;
+            canvas.height = 768;
+            const ctx = canvas.getContext('2d');
+
+            // Background (light gray)
+            ctx.fillStyle = '#f0f0f0';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // IDLE window
+            drawWindow(ctx, 30, 30, 1306, 708, 'IDLE Shell 3.13.9');
+
+            // Menu bar
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(40, 60, 1286, 25);
+            ctx.fillStyle = '#000000';
+            ctx.font = '13px Consolas, monospace';
+            ctx.fillText('File   Edit   Shell   Debug   Options   Window   Help', 50, 78);
+
+            // Python info
+            ctx.fillStyle = '#000000';
+            ctx.font = '12px Consolas, monospace';
+            const pythonInfo = 'Python 3.13.9 (tags/v3.13.9:51835fa5, Oct 14 2025, 14:09:13) [MSC v.1944 64 bit (AMD64)] on win32';
+            ctx.fillText(pythonInfo, 50, 110);
+            ctx.fillText('Enter "help" below or click "Help" above for more information.', 50, 130);
+
+            // Program output
+            let y = 160;
+            const lineHeight = 20;
+
+            ctx.fillText('>>> ', 50, y);
+            y += lineHeight * 2;
+
+            const lines = [
+                `=========== RESTART: C:\\Users\\DELL\\Desktop\\Code Files\\IDLE\\Admission.py ===========`,
+                'University Admission Checker',
+                '----------------------------',
+                `Enter student name: ${data.name}`,
+                `Enter number of O-level credits: ${data.oLevelCredits}`,
+                `Enter JAMB score: ${data.jambScore}`,
+                `Enter student age: ${data.age}`,
+                '',
+                'Student Details:',
+                `Name: ${data.name}`,
+                `O-level Credits: ${data.oLevelCredits}`,
+                `JAMB Score: ${data.jambScore}`,
+                `Age: ${data.age}`,
+                '',
+                `Result: ${eligibility}`,
+                '>>> '
+            ];
+
+            lines.forEach(line => {
+                ctx.fillText(line, 50, y);
+                y += lineHeight;
+            });
+
+            // Download
+            const link = document.createElement('a');
+            link.download = `${data.name.replace(/\s+/g, '_')}_Output.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        async function downloadCode() {
+            const data = window.studentData;
+
+            // Create code screenshot
+            const canvas = document.createElement('canvas');
+            canvas.width = 1366;
+            canvas.height = 768;
+            const ctx = canvas.getContext('2d');
+
+            // Background (light gray)
+            ctx.fillStyle = '#f0f0f0';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // IDLE window
+            drawWindow(ctx, 30, 30, 1306, 708, 'Admission.py - C:\\Users\\DELL\\Desktop\\Code Files\\IDLE\\Admission.py (3.13.9)');
+
+            // Menu bar
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(40, 60, 1286, 25);
+            ctx.fillStyle = '#000000';
+            ctx.font = '13px Consolas, monospace';
+            ctx.fillText('File   Edit   Format   Run   Options   Window   Help', 50, 78);
+
+            // Code content
+            const codeLines = [
+                { text: '# University Admission Eligibility Checker', color: '#dd1144' },
+                { text: '# Simple version for beginners', color: '#dd1144' },
+                { text: '# Get student information', color: '#dd1144' },
+                { text: 'print("University Admission Checker")', color: '#000000', keyword: true },
+                { text: 'print("----------------------------")', color: '#000000', keyword: true },
+                { text: 'name = input("Enter student name: ")', color: '#000000', keyword: true },
+                { text: 'o_level_credits = int(input("Enter number of O-level credits: "))', color: '#000000', keyword: true },
+                { text: 'jamb_score = int(input("Enter JAMB score: "))', color: '#000000', keyword: true },
+                { text: 'age = int(input("Enter student age: "))', color: '#000000', keyword: true },
+                { text: 'print()', color: '#000000', keyword: true },
+                { text: 'print("Student Details:")', color: '#000000', keyword: true },
+                { text: 'print("Name:", name)', color: '#000000', keyword: true },
+                { text: 'print("O-level Credits:", o_level_credits)', color: '#000000', keyword: true },
+                { text: 'print("JAMB Score:", jamb_score)', color: '#000000', keyword: true },
+                { text: 'print("Age:", age)', color: '#000000', keyword: true },
+                { text: 'print()', color: '#000000', keyword: true },
+                { text: '# Check eligibility', color: '#dd1144' },
+                { text: 'if o_level_credits >= 5 and jamb_score >= 200 and age >= 16:', color: '#000000', keyword: true },
+                { text: '    print("Result: ELIGIBLE FOR ADMISSION")', color: '#000000', keyword: true },
+                { text: 'else:', color: '#000000', keyword: true },
+                { text: '    print("Result: NOT ELIGIBLE FOR ADMISSION")', color: '#000000', keyword: true }
+            ];
+
+            let y = 110;
+            const lineHeight = 20;
+            const lineNumWidth = 40;
+
+            ctx.font = '12px Consolas, monospace';
+
+            codeLines.forEach((line, index) => {
+                // Line number
+                ctx.fillStyle = '#999999';
+                ctx.fillText(`${index + 1}`, 50, y);
+
+                // Code text
+                if (line.keyword) {
+                    // Syntax highlighting for keywords
+                    const text = line.text;
+                    let x = 50 + lineNumWidth;
+                    
+                    // Simple keyword highlighting
+                    const keywords = ['print', 'input', 'int', 'if', 'else', 'and'];
+                    let tempText = text;
+                    let currentX = x;
+                    
+                    // Split by spaces and highlight keywords
+                    const parts = text.split(/(\s+|[()":,])/);
+                    parts.forEach(part => {
+                        if (keywords.some(kw => part === kw)) {
+                            ctx.fillStyle = '#008000';
+                        } else if (part.startsWith('"') || part.includes('"')) {
+                            ctx.fillStyle = '#dd1144';
+                        } else if (/^\d+$/.test(part)) {
+                            ctx.fillStyle = '#0000ff';
+                        } else {
+                            ctx.fillStyle = '#000000';
+                        }
+                        ctx.fillText(part, currentX, y);
+                        currentX += ctx.measureText(part).width;
+                    });
+                } else {
+                    ctx.fillStyle = line.color;
+                    ctx.fillText(line.text, 50 + lineNumWidth, y);
+                }
+
+                y += lineHeight;
+            });
+
+            // Download
+            const link = document.createElement('a');
+            link.download = `${data.name.replace(/\s+/g, '_')}_Code.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        function drawWindow(ctx, x, y, width, height, title) {
+            // Window border
+            ctx.strokeStyle = '#0078d7';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, width, height);
+
+            // Title bar
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(x, y, width, 30);
+
+            // Title text
+            ctx.fillStyle = '#000000';
+            ctx.font = '12px Segoe UI, sans-serif';
+            ctx.fillText(title, x + 10, y + 20);
+
+            // Window buttons (minimize, maximize, close)
+            const buttonY = y + 8;
+            const buttonSize = 14;
+            
+            // Close button (X)
+            ctx.fillStyle = '#e81123';
+            ctx.fillRect(x + width - 35, buttonY, buttonSize, buttonSize);
+            
+            // Maximize button
+            ctx.fillStyle = '#ffffff';
+            ctx.strokeStyle = '#000000';
+            ctx.strokeRect(x + width - 60, buttonY, buttonSize, buttonSize);
+            
+            // Minimize button
+            ctx.fillRect(x + width - 85, buttonY + buttonSize - 2, buttonSize, 2);
+
+            // Content area
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(x, y + 30, width, height - 30);
+        }
+    </script>
+</body>
+</html>
